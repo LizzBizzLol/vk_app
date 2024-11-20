@@ -4,8 +4,8 @@
 ## Как использовать
 1. Убедитесь, что у вас установлен Python 3.7+.
 2. Клонируйте репозиторий:
-   git clone https://github.com/LizzBizzLol/vk_app.git
-   cd vk_app
+   `git clone https://github.com/LizzBizzLol/vk_app.git`
+   `cd vk_app`
 4. Установите зависимости (если нужны).
 5. Запустите приложение:
    `python main.py <user_id> <access_token> <output_path>`
