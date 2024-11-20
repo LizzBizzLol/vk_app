@@ -1,54 +1,73 @@
-import requests
 import argparse
+import requests
 import json
+import os
+from datetime import datetime
+
+
+def get_vk_user_info(user_id=1, access_token=None):
+    version = '5.199'  # last version of VK API (october 2024)
+
+    url = f'https://api.vk.com/method/users.get?user_ids={user_id}&fields=followers_count,subscriptions&access_token={access_token}&v={version}'
+
+    subscriptions_url = f'https://api.vk.com/method/users.getSubscriptions?user_id={user_id}&access_token={access_token}&v={version}'
+    
+    response = requests.get(url)
+    subscriptions_response = requests.get(subscriptions_url)
+    
+    if response.status_code != 200:
+        print("VK API error: ", response.text)
+        return None
+    
+    data = response.json()
+    
+    if 'response' not in data:
+        print("User Info data error: ", data)
+        return None
+    
+    user_info = data['response'][0]
+    
+    if subscriptions_response.status_code != 200:
+        print("Subscriptions error: ", subscriptions_response.text)
+        return None
+    
+    subscriptions_data = subscriptions_response.json()
+    
+    user_info['groups'] = subscriptions_data.get('response', {}).get('groups', [])
+    user_info['users'] = subscriptions_data.get('response', {}).get('users', [])
+    return user_info
+
+
+def save_to_json(user_info, output_path=None):
+    if output_path is None:
+        output_path = os.path.join(os.getcwd(), 'apiData')
+    
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+    
+    filename = f"{user_info['first_name']}_{user_info['last_name']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    filepath = os.path.join(output_path, filename)
+    
+    with open(filepath, 'w', encoding='utf-8') as json_file:
+        json.dump(user_info, json_file, ensure_ascii=False, indent=4)
+    
+    print(f"Created and saved in {filepath}")
+
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="VK Console App")
-    parser.add_argument('--user-id', type=str, default=None, help="VK User ID")
-    parser.add_argument('--output-path', type=str, default='output.json', help="Path to save the JSON file")
+    parser = argparse.ArgumentParser(description='Get VK user info and save it to a JSON file.')
+    parser.add_argument('user_id', help='VK User ID')
+    parser.add_argument('access_token', help='Access Token for VK API')
+    parser.add_argument('output_path', nargs='?', help='Output path for the JSON file (default: current directory)')
+    
     return parser.parse_args()
 
-def vk_api_request(method, token, params):
-    url = f"https://api.vk.com/method/{method}"
-    params.update({
-        "access_token": token,
-        "v": "5.131"
-    })
-    response = requests.get(url, params=params)
-    response.raise_for_status()  # Поднять исключение при ошибке HTTP
-    data = response.json()
-    if "error" in data:
-        raise ValueError(f"Error from VK API: {data['error']['error_msg']}")
-    return data["response"]
 
 def main():
     args = parse_arguments()
-    token = "vk1.a.l4ZHRDJ53NWEhSkxQdqppvuvBbOly2hZyLlqe6yhnV8jXZs4MZMnYzVDETRoq852wrMy_moaw4Kw01FPU04h2Gc_OiFkFDaS1_VV_WbqWCf57wmDg17SfAbdL3wTnAHUJtnpHZpqzuA-GPrn25Av_eNmn2ZuWqmsWYEbgi0PVTcrnqJKQnrGmzsRc8tKvCVr"  # Вставь токен сюда
-    
-    user_id = args.user_id if args.user_id else "me"  # Если ID не указан, берем текущего пользователя
-    output_path = args.output_path
+    user_info = get_vk_user_info(args.user_id, args.access_token)
+    save_to_json(user_info, args.output_path)
 
-    try:
-        print("Получаем информацию о пользователе...")
-        user_info = vk_api_request("users.get", token, {"user_ids": user_id})
-        
-        print("Получаем подписчиков...")
-        followers = vk_api_request("users.getFollowers", token, {"user_id": user_id})
-        
-        print("Получаем подписки...")
-        subscriptions = vk_api_request("users.getSubscriptions", token, {"user_id": user_id})
 
-        result = {
-            "user_info": user_info,
-            "followers": followers,
-            "subscriptions": subscriptions,
-        }
-
-        print("Сохраняем результат в JSON...")
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(result, f, ensure_ascii=False, indent=4)
-
-        print(f"Данные сохранены в {output_path}")
-
-    except Exception as e:
-        print(f"Произошла ошибка: {e}")
+if __name__ == "__main__":
+    main()
