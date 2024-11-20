@@ -7,7 +7,8 @@
    git clone https://github.com/LizzBizzLol/vk_app.git
    cd vk_app
 4. Установите зависимости (если нужны).
-5. Запустите приложение: python main.py --user-id <YOUR_USER_ID> --output-path output.json
+5. Запустите приложение:
+   `python main.py <user_id> <access_token> <output_path>`
 
 Если `--user-id` не указан, будет использован текущий пользователь.
 Если `--output-path` не указан, результат сохранится в `output.json`.
