@@ -6,6 +6,7 @@
 2. Клонируйте репозиторий:
 
    `git clone https://github.com/LizzBizzLol/vk_app.git`
+
    `cd vk_app`
 4. Установите зависимости (если нужны).
 5. Запустите приложение:
